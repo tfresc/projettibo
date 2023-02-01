@@ -1,0 +1,115 @@
+- hosts: localhost
+  connection: local
+  collections:
+    - azure.azcollection
+  tasks:
+    - name: Creating resource group
+      azure_rm_resourcegroup:
+        name: "projettf"
+        location: "westeurope"
+
+    - name: Create virtual network
+      azure_rm_virtualnetwork:
+        resource_group: projettf
+        name: mytiboVnet
+        address_prefixes: "10.0.0.0/16"
+        
+    - name: Add subnet
+      azure_rm_subnet:
+        resource_group: projettf
+        name: subnettf
+        address_prefix: "10.0.1.0/24"
+        virtual_network: mytiboVnet
+
+    - name: Create public IP address VM1
+      azure_rm_publicipaddress:
+        resource_group: projettf
+        allocation_method: Static
+        name: TiboVM1IP
+      register: output_ip_address
+
+    - name: Public IP of TiboVM1
+      debug:
+        msg: "The public IP is {{ output_ip_address.state.ip_address }}."
+
+    - name: Create public IP address VM2
+      azure_rm_publicipaddress:
+        resource_group: projettf
+        allocation_method: Static
+        name: TiboVM2IP
+      register: output_ip_address
+
+    - name: Public IP of TiboVM2
+      debug:
+        msg: "The public IP is {{ output_ip_address.state.ip_address }}."
+    
+    - name: Create Network Security Group regles ssh et http
+      azure_rm_securitygroup:
+        resource_group: projettf
+        name: tiboSecu
+        rules:
+          - name: SSH
+            protocol: Tcp
+            destination_port_range: 22
+            access: Allow
+            priority: 1001
+            direction: Inbound
+          - name: HTTP
+            protocol: Tcp
+            destination_port_range: 80
+            access: Allow
+            priority: 1002
+            direction: Inbound  
+
+    - name: Create virtual network interface card VM1
+      azure_rm_networkinterface:
+        resource_group: projettf
+        name: VM1IC
+        virtual_network: mytiboVnet
+        subnet: subnettf
+        public_ip_name: TiboVM1IP
+        security_group: tiboSecu
+
+    - name: Create virtual network interface card VM2
+      azure_rm_networkinterface:
+        resource_group: projettf
+        name: VM2IC
+        virtual_network: mytiboVnet
+        subnet: subnettf
+        public_ip_name: TiboVM2IP
+        security_group: tiboSecu
+
+
+    - name: Create VM1
+      azure_rm_virtualmachine:
+        resource_group: projettf
+        name: TiboVM1
+        vm_size: Standard_B4ms
+        admin_username: azureuser
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: /home/azureuser/.ssh/authorized_keys
+            key_data: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC53mQpWhmGBUUoqSbOc7KMEskFZ/JkczfguECg/e9UFucTLx/LRSq5U4Jxz+APz5IJj0UoZZKu2mI429UM8HrWnMmDqfS+Lkgvaqo4Tg2/udtrj9FQkmt3M3OMv/QZrJP/YwPWA1YlkUwgO/WL/rqLcNC2HMLv6Nii+kRb96HozLwIwvJ0JuNTJPh5lWmKRqmHHWv+IbJK1A+ZMWXRUywPbI/M/9CHJtX3VajxNqvPjIiC8lx67qHniomnnBi/ymrYGk+M1mE4rQOVJPviC/QLPJnEXn880Ltng2uE1TG96jvZTxyIHcYjMaTSWZNl53EfXGqiIzq/qm++PaEsWDa9lJ5igqkLL6t3NSgEVE2JIgM972Pd54qwsn/dYNxGYQzUL6CToftD85BgbAIngrHcwrC9UBP4FF9WTChzVcOP/rth3CH0s8nJVqp7puupQPqE2p/Vot417FfIECzE5uwrAFTAev/F72clzWV5kqiEwkAia7W2hGFq67hptQ0Omvt3MMPR6FoDVAXasbChftj55xYGffsIVpG5T7nBpGFc9R8x1QX522d2LyrmuAyGlPGZ3YsjJqESgqNe7hZIscQH2KIqajqmeGFKVnyx9axfqMCB9Jmx0FPypwj1N9FiUkOEpfCgb7eq4jPnTG0s3JzNG4xfTEg77FH1u0BJDhXv5Q== thibault@tibodebian"
+        network_interfaces: VM1IC
+        image:
+          offer: UbuntuServer
+          publisher: Canonical
+          sku: 16.04-LTS
+          version: latest
+
+    - name: Create VM2
+      azure_rm_virtualmachine:
+        resource_group: projettf
+        name: TiboVM2
+        vm_size: Standard_B2s
+        admin_username: azureuser
+        ssh_password_enabled: false
+        ssh_public_keys:
+          - path: /home/azureuser/.ssh/authorized_keys
+            key_data: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC53mQpWhmGBUUoqSbOc7KMEskFZ/JkczfguECg/e9UFucTLx/LRSq5U4Jxz+APz5IJj0UoZZKu2mI429UM8HrWnMmDqfS+Lkgvaqo4Tg2/udtrj9FQkmt3M3OMv/QZrJP/YwPWA1YlkUwgO/WL/rqLcNC2HMLv6Nii+kRb96HozLwIwvJ0JuNTJPh5lWmKRqmHHWv+IbJK1A+ZMWXRUywPbI/M/9CHJtX3VajxNqvPjIiC8lx67qHniomnnBi/ymrYGk+M1mE4rQOVJPviC/QLPJnEXn880Ltng2uE1TG96jvZTxyIHcYjMaTSWZNl53EfXGqiIzq/qm++PaEsWDa9lJ5igqkLL6t3NSgEVE2JIgM972Pd54qwsn/dYNxGYQzUL6CToftD85BgbAIngrHcwrC9UBP4FF9WTChzVcOP/rth3CH0s8nJVqp7puupQPqE2p/Vot417FfIECzE5uwrAFTAev/F72clzWV5kqiEwkAia7W2hGFq67hptQ0Omvt3MMPR6FoDVAXasbChftj55xYGffsIVpG5T7nBpGFc9R8x1QX522d2LyrmuAyGlPGZ3YsjJqESgqNe7hZIscQH2KIqajqmeGFKVnyx9axfqMCB9Jmx0FPypwj1N9FiUkOEpfCgb7eq4jPnTG0s3JzNG4xfTEg77FH1u0BJDhXv5Q== thibault@tibodebian"
+        network_interfaces: VM2IC
+        image:
+          offer: UbuntuServer
+          publisher: Canonical
+          sku: 16.04-LTS
+          version: latest

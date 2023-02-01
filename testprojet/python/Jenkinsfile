@@ -1,0 +1,29 @@
+pipeline { 
+agent any 
+    stages { 
+        stage ('recupere le git') { 
+          steps {
+          git branch: 'master', url: 'http://localhost/gitpython'
+                    
+        }
+ 
+        }
+        stage ('build image docker') { 
+          steps{
+          script{ 
+            docker build -f Dockerfile 
+            docker run --detach --publish 8888:8888 --name=testpython  webpython
+          } 
+          }
+        
+        }
+        
+        stage ('Deploy') { 
+        script{
+            scp azureuser@VM1ip:/home/azureuser/python azureuser@VM2ip:/home/azureuser/python
+        }
+       
+ 
+    }           
+ }
+ 
