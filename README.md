@@ -16,10 +16,10 @@ Et pour faire le projet en suivant les consignes énnoncés.
 Trop peu de temps et un peu trop seul pour y arriver.
 
 Voilà pourquoi je t'envoie mon travail a part sachant que j'ai perdu beaucoup à cause de la suppression des rg ce jour 
-mais j'ai des captures d'ecrans qui en atteste.
+mais j'ai des captures d'ecrans qui en atteste que j'avais fait pour la présentation.
 
-Ce projet était très bien et tu m'as beaucoup appris je te remercie pour tout encore une fois
+Ce projet était très bien je vais d'ailleurs essayer de le refaire et tu m'as beaucoup appris je te remercie pour tout encore une fois
 
-Merci  
+Très cordialement
 
 
